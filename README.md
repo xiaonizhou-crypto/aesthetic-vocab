@@ -80,3 +80,13 @@ curl -o ~/.claude/skills/aesthetic-vocab.md \
 ## License
 
 MIT
+
+## API Key and data privacy / 密钥与数据说明
+
+This is a bring-your-own-key learning demo. The key is held only in the current page's memory, is removed from the input after use, and is cleared on page exit; reload requires re-entry. The page also attempts to delete keys saved by older versions from browser storage. The “清除 Key” button clears the current key. Requests already sent cannot be recalled.
+
+The browser sends images, text and API requests directly to Google using your key. Browser speech recognition may use your browser vendor's services. Local storage of a key is not required for these services to receive your input. Do not use confidential images or text, shared/public computers, or unrestricted keys. Review provider terms, account restrictions and quota/billing before use.
+
+此版本只在当前页面内存中临时使用 Key，并尝试清理旧版保存的 Key。不会上传 Key 到本项目自建服务器，但请求会携带 Key 直接发往 Google。页面退出、刷新或手动清除后需重新输入。网页脚本、浏览器扩展仍可能接触当前页面数据，因此这不等于生产级密钥隔离。
+
+For a hosted public product, use an authenticated backend with server-side secret storage, per-user authorization and rate limits; never embed the owner's key in public JavaScript.

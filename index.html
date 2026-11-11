@@ -190,6 +190,7 @@ footer{border-top:1px solid var(--z100);background:#fff;padding:5rem 1.5rem;text
 .ft-line{width:1px;height:3rem;background:var(--z200);margin:0 auto}
 .ft-tag{font-family:'Lora',serif;font-size:.875rem;font-style:italic;color:var(--z400);margin-top:1.5rem}
 .ft-copy{font-size:.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:var(--z300);margin-top:1rem}
+#key-bar{flex-wrap:wrap}#key-note{display:block;flex-basis:100%;font-size:.75rem;line-height:1.5;opacity:.85}#key-input{min-width:8rem}
 </style>
 </head>
 <body>
@@ -220,8 +221,10 @@ footer{border-top:1px solid var(--z100);background:#fff;padding:5rem 1.5rem;text
 <!-- API KEY BAR -->
 <div id="key-bar">
   <label for="key-input">Gemini API Key</label>
-  <input type="password" id="key-input" placeholder="AIza…" autocomplete="off"/>
-  <button id="key-save" onclick="saveKey()">保存</button>
+  <input type="password" id="key-input" placeholder="仅在本次页面临时使用" autocomplete="off" spellcheck="false" aria-describedby="key-note"/>
+  <button id="key-save" onclick="saveKey()">本次使用</button>
+  <button type="button" onclick="clearKey()">清除 Key</button>
+  <small id="key-note">Key 不保存到浏览器，刷新或离开页面后需重填。图片和文字会发送给 Google；不要输入敏感资料。此为自备 Key 演示。</small>
 </div>
 
 <main id="main">
@@ -317,18 +320,31 @@ const S = {
 // ─────────────────────────────────
 //  API Key
 // ─────────────────────────────────
-let apiKey = localStorage.getItem('gk') || '';
+// Credentials remain in this page's memory only. Never restore old saved keys.
+let apiKey = '';
+function clearLegacyKey() {
+  try { localStorage.removeItem('gk'); } catch { /* Storage may be blocked. */ }
+  try { sessionStorage.removeItem('gk'); } catch { /* Storage may be blocked. */ }
+}
+clearLegacyKey();
 const keyBar = document.getElementById('key-bar');
 const keyInput = document.getElementById('key-input');
-
-if (apiKey) { keyInput.value = apiKey; keyBar.classList.add('gone'); }
-
 function saveKey() {
-  apiKey = keyInput.value.trim();
-  localStorage.setItem('gk', apiKey);
+  const value = keyInput.value.trim();
+  if (!value) { showKeyBar(); return; }
+  apiKey = value;
+  keyInput.value = '';
+  clearLegacyKey();
   keyBar.classList.add('gone');
 }
 function showKeyBar() { keyBar.classList.remove('gone'); keyInput.focus(); }
+function clearKey() {
+  apiKey = '';
+  keyInput.value = '';
+  clearLegacyKey();
+  showKeyBar();
+}
+window.addEventListener('pagehide', clearKey);
 keyInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveKey(); });
 
 // ─────────────────────────────────
@@ -425,10 +441,10 @@ async function analyzeImage() {
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{
             parts: [
@@ -512,7 +528,7 @@ function renderResults(d) {
           <span class="vc-word">${esc(item.english)}</span>
           <span class="vc-ph">[${esc(item.phonetic)}]</span>
         </div>
-        <button class="vc-spk" title="播放发音" onclick="speakWord('${esc(item.english)}')">
+        <button class="vc-spk" title="播放发音" data-word="${esc(item.english)}">
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
             <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/>
@@ -524,6 +540,9 @@ function renderResults(d) {
     </div>
   `).join('');
 
+  document.getElementById('glossary').querySelectorAll('[data-word]').forEach(button => {
+    button.addEventListener('click', () => speakWord(button.dataset.word));
+  });
   show('results');
   setTimeout(updateOverlay, 80);
 }
@@ -631,10 +650,10 @@ function makeWavUrl(b64) {
 
 async function tts(text, voice = 'Achernar') {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
         contents: [{ parts: [{ text }] }],
         generationConfig: {

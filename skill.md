@@ -28,9 +28,9 @@ All Gemini calls use the **REST API via `fetch()`** — no SDK needed.
 ### 1. Image analysis — `gemini-2.5-flash`
 
 ```js
-fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
   body: JSON.stringify({
     contents: [{ parts: [
       { inline_data: { mime_type: imageMime, data: imageBase64 } },
@@ -73,8 +73,9 @@ Also write a short literary scene description (English + Chinese) and a poetic t
 ### 2. Story narration TTS — `gemini-2.5-flash-preview-tts`
 
 ```js
-fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`, {
   method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
   body: JSON.stringify({
     contents: [{ parts: [{ text: `Read this in a warm, youthful, gentle male voice — like a soft bedtime story. Natural pace:\n\n${storyText}` }] }],
     generationConfig: {
@@ -132,7 +133,7 @@ body { background: #fdfdfb; font-family: 'Inter', sans-serif; }
 ## Output rules
 
 - **Single file only** — all CSS, JS, HTML inline, no external files
-- Include an **API key input bar** at the top (store in `localStorage`)
+- Include an **API key input bar** at the top (hold in page memory only; never persist keys in localStorage or sessionStorage; clear old saved keys and provide a clear-key button)
 - Include a small camera-preview-style minimap of the uploaded image (optional) OR just show the full image
 - Show loading state while Gemini processes (`Seeking the perfect words…`)
 - Graceful fallback: if TTS API fails, fall back to Web Speech API for the story too
@@ -148,3 +149,5 @@ body { background: #fdfdfb; font-family: 'Inter', sans-serif; }
 
 **Live demo:** https://xiaonizhou-crypto.github.io/aesthetic-vocab/
 **Source:** https://github.com/xiaonizhou-crypto/aesthetic-vocab
+
+Security: keep generated model text out of inline JavaScript event handlers. Use DOM event listeners and escaped text/data attributes. Explain that browser API calls send user input to Google; memory-only key handling is a demo safeguard, not a production secret boundary.
